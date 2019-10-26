@@ -1,4 +1,4 @@
-add placeholder image incase the user didn't have any (ship them with the app)
+add placeholder images (list of images) incase the user didn't have any (ship them with the app)
 add placement order (sequential vs random (choice similar to docker))
 fix image sizing
 add readme
@@ -10,3 +10,5 @@ add screenshots
 add description
 publish on github
 add ability to control timer
+add metrics to know how many images are left, which image is showing, time left for this image (maybe as a line that get longed)...
+update icons

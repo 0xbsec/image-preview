@@ -7,16 +7,17 @@ from random import choice
 
 class ImageSelector:
     def __init__(self, directories=[]):
-        # self.directories = directories
-        self.images = self.get_images(directories)
+        self.directories = directories
+        self.images = self.get_images(self.directories)
 
     def refresh(self):
         """
         Reload image lists (e.g. when a new image get added, we'll pick it up)
         """
-        pass
+        self.images = self.get_images(self.directories)
 
     def get_next_image(self):
+        # return random image for now
         return choice(self.images)
 
     def get_images(self, directories):
