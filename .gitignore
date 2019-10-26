@@ -1,1 +1,12 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+venv/
+target/
+
+.DS_Store
+.idea/
+
 src/main/resources/base/images/img.jpg
