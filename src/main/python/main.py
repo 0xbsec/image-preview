@@ -61,11 +61,12 @@ class TrayIcon(QSystemTrayIcon):
         self.config = self.loadConfig()
         if int(self.config.value("config/show_stock")):
             self.imageSelector = ImageSelector([self.ctx.stock])
-            self.config.setValue("config/show_stock", 0)
+            # self.config.setValue("config/show_stock", 0)
             self.config.sync()
         else:
             self.imageSelector = ImageSelector([])
 
+        self.next_image = None
         self.last_theme = darkdetect.theme().lower()
         self.updateIcon()
         self._timer = QTimer()
@@ -85,10 +86,17 @@ class TrayIcon(QSystemTrayIcon):
     def create_menu(self):
         _menu = QMenu()
 
+        self.statsLabel = QLabel("")
         self.imageLabel = QLabel()
+        self.updateImageStats()
         self.updateImage()
         label_action = QWidgetAction(self.imageLabel)
         label_action.setDefaultWidget(self.imageLabel)
+        _menu.addAction(label_action)
+
+        # add stats label
+        label_action = QWidgetAction(self.statsLabel)
+        label_action.setDefaultWidget(self.statsLabel)
         _menu.addAction(label_action)
 
         _menu.addSeparator()
@@ -100,9 +108,20 @@ class TrayIcon(QSystemTrayIcon):
         self._menu = _menu
         self.setContextMenu(self._menu)
 
+    def updateImageStats(self):
+        if not self.next_image:
+            return None
+
+        stats = self.next_image["stats"]
+        self.statsLabel.setText(f'position: {stats["pos"]}/{stats["total"]} - image: {stats["name"]}')
+        self.statsLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.statsLabel.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.statsLabel.setStyleSheet("QLabel {margin: 10px; margin-left: 20px;}")
+
+
     def updateImage(self):
-        next_image = self.imageSelector.get_next_image()
-        if not next_image:
+        self.next_image = self.imageSelector.get_next_image_with_stats()
+        if not self.next_image:
             self.imageLabel = QLabel("No Images Found")
             self.imageLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             self.imageLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -114,13 +133,15 @@ class TrayIcon(QSystemTrayIcon):
 
             self.imageLabel.setStyleSheet(f"QLabel {{color: {color}; font-size: 20px}}")
         else:
-            pixmap = QPixmap(next_image)
-            pixmap = pixmap.scaledToWidth(400)
+            pixmap = QPixmap(self.next_image["img"])
+            # pixmap = pixmap.scaledToWidth(400)
+            pixmap = pixmap.scaled(400, 400, Qt.KeepAspectRatio)
             self.imageLabel.setPixmap(pixmap)
             self.imageLabel.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
             self.imageLabel.setScaledContents(True)
             self.imageLabel.setAlignment(Qt.AlignCenter)
-            self.imageLabel.setStyleSheet("QLabel {margin: 20px;}")
+            self.imageLabel.setStyleSheet("QLabel {margin: 20px;  margin-bottom: 0px;}") # accomodate for the stats label
+            self.updateImageStats()
 
     @pyqtSlot()
     def exit_slot(self):
@@ -137,9 +158,7 @@ class TrayIcon(QSystemTrayIcon):
     def recurring_timer(self):
         theme = darkdetect.theme().lower()
 
-        img = self.imageSelector.get_next_image()
-        if img:
-            self.updateImage()
+        self.updateImage()
 
         if theme != self.last_theme:
             self.last_theme = theme

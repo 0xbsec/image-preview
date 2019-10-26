@@ -3,6 +3,8 @@
 """
 
 import pathlib
+import os
+import textwrap
 from random import choice
 
 class ImageSelector:
@@ -16,12 +18,41 @@ class ImageSelector:
         """
         self.images = self.get_images(self.directories)
 
-    def get_next_image(self):
-        # return random image for now
-        if not self.images:
+    def get_next_image_with_stats(self):
+        response = {}
+
+        _index, next_img = self.get_next_image()
+        if not next_img:
             return None
 
-        return choice(self.images)
+        response["img"] = next_img
+        response["stats"] = {
+          "pos": _index,
+          "total": len(self.images),
+          "name": self.get_file_name(next_img)
+        }
+
+        return response
+
+    def get_file_name(self, file):
+        name, ext = os.path.splitext(os.path.basename(file))
+
+        max_width = 15
+        if len(name) > max_width:
+            start = name[:max_width-5]
+            end = name[-5:]
+            name = start + '...' + end
+
+        return f'{name}{ext}'
+
+
+    def get_next_image(self):
+        # return random image for now with index
+        if not self.images:
+            return None, None
+
+        _index = choice(range(len(self.images)))
+        return _index + 1, self.images[_index]
 
     def get_images(self, directories):
         """
