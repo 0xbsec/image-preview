@@ -33,6 +33,13 @@ class AppContext(ApplicationContext):
         return self.get_resource("config.ini")
 
     @cached_property
+    def stock(self):
+        """
+        stock images to show when user first open the application.
+        """
+        return self.get_resource("stock")
+
+    @cached_property
     def icons(self):
         return {
             "icon-light": QIcon(
@@ -52,7 +59,13 @@ class TrayIcon(QSystemTrayIcon):
         self.ctx = ctx
 
         self.config = self.loadConfig()
-        self.imageSelector = ImageSelector(['/tmp/test_with_images'])
+        if int(self.config.value("config/show_stock")):
+            self.imageSelector = ImageSelector([self.ctx.stock])
+            self.config.setValue("config/show_stock", 0)
+            self.config.sync()
+        else:
+            self.imageSelector = ImageSelector([])
+
         self.last_theme = darkdetect.theme().lower()
         self.updateIcon()
         self._timer = QTimer()
@@ -88,14 +101,26 @@ class TrayIcon(QSystemTrayIcon):
         self.setContextMenu(self._menu)
 
     def updateImage(self):
-        # pixmap = QPixmap(self.ctx.get_resource("images/img.jpg"))
-        pixmap = QPixmap(self.imageSelector.get_next_image())
-        pixmap = pixmap.scaledToWidth(400)
-        self.imageLabel.setPixmap(pixmap)
-        self.imageLabel.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-        self.imageLabel.setScaledContents(True)
-        self.imageLabel.setAlignment(Qt.AlignCenter)
-        self.imageLabel.setStyleSheet("QLabel {margin: 20px;}")
+        next_image = self.imageSelector.get_next_image()
+        if not next_image:
+            self.imageLabel = QLabel("No Images Found")
+            self.imageLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+            self.imageLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.imageLabel.setMargin(80)
+            if self.last_theme == "dark":
+                color = "white"
+            else:
+                color = "black"
+
+            self.imageLabel.setStyleSheet(f"QLabel {{color: {color}; font-size: 20px}}")
+        else:
+            pixmap = QPixmap(next_image)
+            pixmap = pixmap.scaledToWidth(400)
+            self.imageLabel.setPixmap(pixmap)
+            self.imageLabel.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+            self.imageLabel.setScaledContents(True)
+            self.imageLabel.setAlignment(Qt.AlignCenter)
+            self.imageLabel.setStyleSheet("QLabel {margin: 20px;}")
 
     @pyqtSlot()
     def exit_slot(self):
@@ -113,8 +138,8 @@ class TrayIcon(QSystemTrayIcon):
         theme = darkdetect.theme().lower()
 
         img = self.imageSelector.get_next_image()
-        print(f"changing image to {img} ...")
-        self.updateImage()
+        if img:
+            self.updateImage()
 
         if theme != self.last_theme:
             self.last_theme = theme

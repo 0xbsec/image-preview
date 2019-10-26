@@ -18,6 +18,9 @@ class ImageSelector:
 
     def get_next_image(self):
         # return random image for now
+        if not self.images:
+            return None
+
         return choice(self.images)
 
     def get_images(self, directories):
