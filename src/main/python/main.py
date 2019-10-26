@@ -20,6 +20,7 @@ from PyQt5.QtGui import QCursor, QIcon, QPixmap, QPalette
 
 import darkdetect
 import sys
+from image_selector import ImageSelector
 
 class AppContext(ApplicationContext):
     def run(self):
@@ -50,11 +51,12 @@ class TrayIcon(QSystemTrayIcon):
         self.messageClicked.connect(self.message_clicked_slot)
         self.ctx = ctx
 
-        # self.config = self.loadConfig()
+        self.config = self.loadConfig()
+        self.imageSelector = ImageSelector(['/tmp/test_with_images'])
         self.last_theme = darkdetect.theme().lower()
         self.updateIcon()
         self._timer = QTimer()
-        self._timer.setInterval(1000)
+        self._timer.setInterval(3000)
         self._timer.timeout.connect(self.recurring_timer)
         self._timer.start()
         self.create_menu()
@@ -71,16 +73,7 @@ class TrayIcon(QSystemTrayIcon):
         _menu = QMenu()
 
         self.imageLabel = QLabel()
-        # Allowed formats
-        # bmp, gif, jpg, jpeg, png, pbm, pgm,ppm, xbm, xpm
-        pixmap = QPixmap(self.ctx.get_resource("images/img.jpg"))
-        pixmap = pixmap.scaledToWidth(400)
-        self.imageLabel.setPixmap(pixmap)
-        self.imageLabel.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-        self.imageLabel.setScaledContents(True)
-        self.imageLabel.setAlignment(Qt.AlignCenter)
-        self.imageLabel.setStyleSheet("QLabel {margin: 20px;}")
-
+        self.updateImage()
         label_action = QWidgetAction(self.imageLabel)
         label_action.setDefaultWidget(self.imageLabel)
         _menu.addAction(label_action)
@@ -93,6 +86,16 @@ class TrayIcon(QSystemTrayIcon):
 
         self._menu = _menu
         self.setContextMenu(self._menu)
+
+    def updateImage(self):
+        # pixmap = QPixmap(self.ctx.get_resource("images/img.jpg"))
+        pixmap = QPixmap(self.imageSelector.get_next_image())
+        pixmap = pixmap.scaledToWidth(400)
+        self.imageLabel.setPixmap(pixmap)
+        self.imageLabel.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        self.imageLabel.setScaledContents(True)
+        self.imageLabel.setAlignment(Qt.AlignCenter)
+        self.imageLabel.setStyleSheet("QLabel {margin: 20px;}")
 
     @pyqtSlot()
     def exit_slot(self):
@@ -108,6 +111,10 @@ class TrayIcon(QSystemTrayIcon):
     @pyqtSlot()
     def recurring_timer(self):
         theme = darkdetect.theme().lower()
+
+        img = self.imageSelector.get_next_image()
+        print(f"changing image to {img} ...")
+        self.updateImage()
 
         if theme != self.last_theme:
             self.last_theme = theme
