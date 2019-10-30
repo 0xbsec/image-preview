@@ -59,20 +59,18 @@ class TrayIcon(QSystemTrayIcon):
         self.ctx = ctx
 
         self.config = self.loadConfig()
-        if int(self.config.value("config/show_stock")):
+        self.directories = []
+        if self.config.value("config/show_stock"):
             self.imageSelector = ImageSelector([self.ctx.stock])
             # self.config.setValue("config/show_stock", 0)
             self.config.sync()
         else:
-            self.imageSelector = ImageSelector([])
+            self.imageSelector = ImageSelector(self.directories)
 
         self.next_image = None
         self.last_theme = darkdetect.theme().lower()
         self.updateIcon()
-        self._timer = QTimer()
-        self._timer.setInterval(3000)
-        self._timer.timeout.connect(self.recurring_timer)
-        self._timer.start()
+        self._timer = None
         self.create_menu()
 
     def loadConfig(self):
@@ -82,6 +80,19 @@ class TrayIcon(QSystemTrayIcon):
     def updateConfig(self, key, value):
         self.config.setValue(key, value)
         self.config.sync()
+        self.reloadImageSelector()
+
+    def reloadImageSelector(self):
+        directories = []
+
+        if self.config.value("config/show_stock"):
+            directories = [self.ctx.stock]
+
+        if self.config.value("config/directories"):
+            directories = self.config.value("config/directories")
+            print("dir array", directories)
+
+        self.imageSelector = ImageSelector(directories)
 
     def create_menu(self):
         _menu = QMenu()
@@ -100,6 +111,41 @@ class TrayIcon(QSystemTrayIcon):
         _menu.addAction(label_action)
 
         _menu.addSeparator()
+
+        _submenu = QMenu(_menu)
+        _submenu.setTitle("Preferences")
+        _switch_submenu = QMenu(_submenu)
+        _switch_submenu.setTitle("Image Change")
+
+        self.onOpenAction = QAction("On Open", _switch_submenu)
+        self.onOpenAction.setCheckable(True)
+
+        config_value = self.config.value("config/switch_on_open")
+        if config_value:
+            config_value = True
+        else:
+            config_value = False
+
+        self.onOpenAction.setChecked(config_value)
+        self.onOpenAction.triggered.connect(self.onOpen)
+        _switch_submenu.addAction(self.onOpenAction)
+
+        self.onTimerAction = QAction("Every 3sec", _switch_submenu)
+        self.onTimerAction.setCheckable(True)
+
+        config_value = self.config.value("config/switch_every_interval")
+        if config_value:
+            config_value = True
+        else:
+            config_value = False
+
+        self.onTimerAction.setChecked(config_value)
+        self.onTimerAction.triggered.connect(self.onTimer)
+        _switch_submenu.addAction(self.onTimerAction)
+
+        _submenu.addMenu(_switch_submenu)
+        _menu.addMenu(_submenu)
+
 
         quiteA = QAction("Exit", _menu)
         quiteA.triggered.connect(self.exit_slot)
@@ -144,6 +190,27 @@ class TrayIcon(QSystemTrayIcon):
             self.updateImageStats()
 
     @pyqtSlot()
+    def onOpen(self):
+        # self.onOpenAction.setChecked(self.onOpenAction.isChecked())
+        self.updateConfig("config/switch_on_open", self.onOpenAction.isChecked())
+
+    @pyqtSlot()
+    def onTimer(self):
+        self.updateConfig("config/switch_every_interval", self.onTimerAction.isChecked())
+
+        if self.onTimerAction.isChecked():
+            if self._timer:
+                self._timer.stop()
+            self._timer = QTimer()
+            self._timer.setInterval(3000)
+            self._timer.timeout.connect(self.recurring_timer)
+            self._timer.start()
+        else:
+            if self._timer:
+                self._timer.stop()
+
+
+    @pyqtSlot()
     def exit_slot(self):
         reply = QMessageBox.question(
             None, "Message", "Are you sure to quit?", QMessageBox.Yes | QMessageBox.No
@@ -156,6 +223,9 @@ class TrayIcon(QSystemTrayIcon):
 
     @pyqtSlot()
     def recurring_timer(self):
+        self.update()
+
+    def update(self):
         theme = darkdetect.theme().lower()
 
         self.updateImage()
@@ -170,21 +240,16 @@ class TrayIcon(QSystemTrayIcon):
         self.setIcon(self.ctx.icons[icon])
 
     def icon_activated_slot(self, reason):
-        # print("icon_activated_slot")
         if reason == QSystemTrayIcon.Unknown:
-            # print("QSystemTrayIcon.Unknown")
             pass
         elif reason == QSystemTrayIcon.Context:
-            # print("QSystemTrayIcon.Context")
             pass
         elif reason == QSystemTrayIcon.DoubleClick:
-            # print("QSystemTrayIcon.DoubleClick")
             pass
-        elif reason == QSystemTrayIcon.Trigger:
-            # print("QSystemTrayIcon.Trigger")
-            pass
+        elif reason == QSystemTrayIcon.Trigger or reason == QSystemTrayIcon.DoubleClick:
+            if self.onOpenAction.isChecked():
+                self.update()
         elif reason == QSystemTrayIcon.MiddleClick:
-            # print("QSystemTrayIcon.MiddleClick")
             current_mouse_cursor = QCursor.pos() - QPoint(50, 50)
             menu = self.contextMenu()
             menu.popup(current_mouse_cursor)

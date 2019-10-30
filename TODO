@@ -1,5 +1,3 @@
-add placement order (sequential vs random (choice similar to docker))
-fix image sizing
 add readme
 add dev & installatino guid
 release
@@ -8,6 +6,8 @@ blogpost
 add screenshots
 add description
 publish on github
+add placement order (sequential vs random (choice similar to docker))
+fix image sizing
 add ability to control timer
-add metrics to know how many images are left, which image is showing, time left for this image (maybe as a line that get longed)...
-add ability to control swith mode (when we open and/or with a timer)
+add metrics to show time left for this image (maybe as a line that get longed)...
+fix image show gap while loading
