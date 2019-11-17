@@ -24,6 +24,7 @@ import sys
 from image_selector import ImageSelector
 from os.path import expanduser
 
+
 class AppContext(ApplicationContext):
     def run(self):
         my_tray = TrayIcon(self)
@@ -44,12 +45,8 @@ class AppContext(ApplicationContext):
     @cached_property
     def icons(self):
         return {
-            "icon-light": QIcon(
-                self.get_resource("images/icon-light.png")
-            ),
-            "icon-dark": QIcon(
-                self.get_resource("images/icon-dark.png")
-            )
+            "icon-light": QIcon(self.get_resource("images/icon-light.png")),
+            "icon-dark": QIcon(self.get_resource("images/icon-dark.png")),
         }
 
 
@@ -89,7 +86,6 @@ class TrayIcon(QSystemTrayIcon):
             return True
         else:
             return False
-
 
     def updateConfigBool(self, key, value):
         val = 0
@@ -187,9 +183,9 @@ class TrayIcon(QSystemTrayIcon):
     def trim(self, name):
         max_width = 30
         if len(name) > max_width:
-            start = name[:max_width-15]
+            start = name[: max_width - 15]
             end = name[-15:]
-            name = start + '...' + end
+            name = start + "..." + end
 
         return name
 
@@ -216,11 +212,14 @@ class TrayIcon(QSystemTrayIcon):
             return None
 
         stats = self.next_image["stats"]
-        self.statsLabel.setText(f'Image: <font face="tahoma" color="#45688E">{stats["name"]}</font> <span style="opacity:0.7">({stats["pos"]}/{stats["total"]})</span>')
+        self.statsLabel.setText(
+            f'Image: <font face="tahoma" color="#45688E">{stats["name"]}</font> <span style="opacity:0.7">({stats["pos"]}/{stats["total"]})</span>'
+        )
         self.statsLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.statsLabel.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.statsLabel.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
         self.statsLabel.setStyleSheet("QLabel {margin: 10px; margin-left: 20px;}")
-
 
     def updateImage(self):
         self.next_image = self.imageSelector.get_next_image_with_stats()
@@ -243,7 +242,9 @@ class TrayIcon(QSystemTrayIcon):
             self.imageLabel.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
             self.imageLabel.setScaledContents(True)
             self.imageLabel.setAlignment(Qt.AlignCenter)
-            self.imageLabel.setStyleSheet("QLabel {margin: 20px;  margin-bottom: 0px;}") # accomodate for the stats label
+            self.imageLabel.setStyleSheet(
+                "QLabel {margin: 20px;  margin-bottom: 0px;}"
+            )  # accomodate for the stats label
             self.updateImageStats()
 
     @pyqtSlot()
@@ -256,7 +257,9 @@ class TrayIcon(QSystemTrayIcon):
 
     @pyqtSlot()
     def onTimer(self):
-        self.updateConfigBool("config/switch_every_interval", self.onTimerAction.isChecked())
+        self.updateConfigBool(
+            "config/switch_every_interval", self.onTimerAction.isChecked()
+        )
 
         if self.onTimerAction.isChecked():
             if self._timer:
@@ -268,7 +271,6 @@ class TrayIcon(QSystemTrayIcon):
         else:
             if self._timer:
                 self._timer.stop()
-
 
     @pyqtSlot()
     def exit_slot(self):
@@ -338,4 +340,3 @@ if __name__ == "__main__":
 
     exit_code = appctxt.run()
     sys.exit(exit_code)
-

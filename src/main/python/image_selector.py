@@ -7,6 +7,7 @@ import os
 import textwrap
 from random import choice
 
+
 class ImageSelector:
     def __init__(self, directories=[]):
         self.directories = directories
@@ -27,9 +28,9 @@ class ImageSelector:
 
         response["img"] = next_img
         response["stats"] = {
-          "pos": _index,
-          "total": len(self.images),
-          "name": self.get_file_name(next_img)
+            "pos": _index,
+            "total": len(self.images),
+            "name": self.get_file_name(next_img),
         }
 
         return response
@@ -39,12 +40,11 @@ class ImageSelector:
 
         max_width = 15
         if len(name) > max_width:
-            start = name[:max_width-5]
+            start = name[: max_width - 5]
             end = name[-5:]
-            name = start + '...' + end
+            name = start + "..." + end
 
-        return f'{name}{ext}'
-
+        return f"{name}{ext}"
 
     def get_next_image(self):
         # return random image for now with index
@@ -62,10 +62,24 @@ class ImageSelector:
         images = []
 
         # formats supported by QPixmap
-        valid_extensions = ["bmp", "gif", "jpg", "jpeg", "png", "pbm", "pgm" ,"ppm", "xbm", "xpm"]
+        valid_extensions = [
+            "bmp",
+            "gif",
+            "jpg",
+            "jpeg",
+            "png",
+            "pbm",
+            "pgm",
+            "ppm",
+            "xbm",
+            "xpm",
+        ]
         for directory in directories:
             for ext in valid_extensions:
-                files = map(lambda filepath: str(filepath.absolute()), pathlib.Path(directory).glob(f"**/*.{ext}"))
+                files = map(
+                    lambda filepath: str(filepath.absolute()),
+                    pathlib.Path(directory).glob(f"**/*.{ext}"),
+                )
 
                 images.extend(files)
 
@@ -73,6 +87,6 @@ class ImageSelector:
 
 
 if __name__ == "__main__":
-    image_selector = ImageSelector(['/tmp/teste'])
+    image_selector = ImageSelector(["/tmp/teste"])
     print(image_selector.images)
     print(image_selector.get_next_image())
