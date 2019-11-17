@@ -204,6 +204,10 @@ class TrayIcon(QSystemTrayIcon):
             if not selected_dir:
                 return
 
+            if self.configBool("config/show_stock"):
+                self.updateConfigBool("config/show_stock", False)
+                self.showStockAction.setChecked(False)
+
             self.updateConfig("config/source_directory", selected_dir)
             self.manageDirectoryAction.setText(self.getSourceLabel())
 
