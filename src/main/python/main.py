@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import (
     QLabel,
     QSizePolicy,
     QScrollArea,
+    QFileDialog,
 )
 from PyQt5.QtCore import pyqtSlot, QTimer, QPoint, Qt, QSettings
 from PyQt5.QtGui import QCursor, QIcon, QPixmap, QPalette
@@ -21,6 +22,7 @@ from PyQt5.QtGui import QCursor, QIcon, QPixmap, QPalette
 import darkdetect
 import sys
 from image_selector import ImageSelector
+from os.path import expanduser
 
 class AppContext(ApplicationContext):
     def run(self):
@@ -60,11 +62,13 @@ class TrayIcon(QSystemTrayIcon):
 
         self.config = self.loadConfig()
         self.directories = []
-        if self.config.value("config/show_stock"):
+
+        if self.configBool("config/show_stock"):
             self.imageSelector = ImageSelector([self.ctx.stock])
-            # self.config.setValue("config/show_stock", 0)
-            self.config.sync()
         else:
+            source_directory = self.config.value("config/source_directory")
+            if source_directory:
+                self.directories = [source_directory]
             self.imageSelector = ImageSelector(self.directories)
 
         self.next_image = None
@@ -72,6 +76,27 @@ class TrayIcon(QSystemTrayIcon):
         self.updateIcon()
         self._timer = None
         self.create_menu()
+
+    def configBool(self, key):
+        val = self.config.value(key)
+
+        if not val:
+            return False
+
+        val = int(val)
+
+        if val:
+            return True
+        else:
+            return False
+
+
+    def updateConfigBool(self, key, value):
+        val = 0
+        if value:
+            val = 1
+
+        self.updateConfig(key, val)
 
     def loadConfig(self):
         config = QSettings(self.ctx.config(), QSettings.IniFormat)
@@ -85,12 +110,10 @@ class TrayIcon(QSystemTrayIcon):
     def reloadImageSelector(self):
         directories = []
 
-        if self.config.value("config/show_stock"):
+        if self.configBool("config/show_stock"):
             directories = [self.ctx.stock]
-
-        if self.config.value("config/directories"):
-            directories = self.config.value("config/directories")
-            print("dir array", directories)
+        elif self.config.value("config/source_directory"):
+            directories = [self.config.value("config/source_directory")]
 
         self.imageSelector = ImageSelector(directories)
 
@@ -115,37 +138,36 @@ class TrayIcon(QSystemTrayIcon):
         _submenu = QMenu(_menu)
         _submenu.setTitle("Preferences")
         _switch_submenu = QMenu(_submenu)
-        _switch_submenu.setTitle("Image Change")
+        _switch_submenu.setTitle("Image change action")
 
         self.onOpenAction = QAction("On Open", _switch_submenu)
         self.onOpenAction.setCheckable(True)
 
-        config_value = self.config.value("config/switch_on_open")
-        if config_value:
-            config_value = True
-        else:
-            config_value = False
-
-        self.onOpenAction.setChecked(config_value)
+        self.onOpenAction.setChecked(self.configBool("config/switch_on_open"))
         self.onOpenAction.triggered.connect(self.onOpen)
         _switch_submenu.addAction(self.onOpenAction)
 
         self.onTimerAction = QAction("Every 3sec", _switch_submenu)
         self.onTimerAction.setCheckable(True)
 
-        config_value = self.config.value("config/switch_every_interval")
-        if config_value:
-            config_value = True
-        else:
-            config_value = False
-
-        self.onTimerAction.setChecked(config_value)
+        self.onTimerAction.setChecked(self.configBool("config/switch_every_interval"))
         self.onTimerAction.triggered.connect(self.onTimer)
         _switch_submenu.addAction(self.onTimerAction)
 
         _submenu.addMenu(_switch_submenu)
-        _menu.addMenu(_submenu)
 
+        self.manageDirectoryAction = QAction(self.getSourceLabel())
+        self.manageDirectoryAction.triggered.connect(self.manageDirectory)
+        _submenu.addAction(self.manageDirectoryAction)
+
+        self.showStockAction = QAction("Show stock images (ignore source)")
+        self.showStockAction.setCheckable(True)
+
+        self.showStockAction.setChecked(self.configBool("config/show_stock"))
+        self.showStockAction.triggered.connect(self.showStock)
+        _submenu.addAction(self.showStockAction)
+
+        _menu.addMenu(_submenu)
 
         quiteA = QAction("Exit", _menu)
         quiteA.triggered.connect(self.exit_slot)
@@ -153,6 +175,37 @@ class TrayIcon(QSystemTrayIcon):
 
         self._menu = _menu
         self.setContextMenu(self._menu)
+
+    def getSourceLabel(self):
+        label = "📌 Update source"
+        config_value = self.config.value("config/source_directory")
+        if config_value:
+            label = label + f" ({self.trim(config_value)})"
+
+        return label
+
+    def trim(self, name):
+        max_width = 30
+        if len(name) > max_width:
+            start = name[:max_width-15]
+            end = name[-15:]
+            name = start + '...' + end
+
+        return name
+
+    def manageDirectory(self):
+        file_dialog = QFileDialog()
+        file_dialog.setFileMode(QFileDialog.DirectoryOnly)
+        file_dialog.setDirectory(expanduser("~"))
+
+        if file_dialog.exec_():
+            selected_dir = file_dialog.selectedFiles()[0]
+
+            if not selected_dir:
+                return
+
+            self.updateConfig("config/source_directory", selected_dir)
+            self.manageDirectoryAction.setText(self.getSourceLabel())
 
     def updateImageStats(self):
         if not self.next_image:
@@ -191,11 +244,15 @@ class TrayIcon(QSystemTrayIcon):
 
     @pyqtSlot()
     def onOpen(self):
-        self.updateConfig("config/switch_on_open", self.onOpenAction.isChecked())
+        self.updateConfigBool("config/switch_on_open", self.onOpenAction.isChecked())
+
+    @pyqtSlot()
+    def showStock(self):
+        self.updateConfigBool("config/show_stock", self.showStockAction.isChecked())
 
     @pyqtSlot()
     def onTimer(self):
-        self.updateConfig("config/switch_every_interval", self.onTimerAction.isChecked())
+        self.updateConfigBool("config/switch_every_interval", self.onTimerAction.isChecked())
 
         if self.onTimerAction.isChecked():
             if self._timer:
@@ -215,7 +272,8 @@ class TrayIcon(QSystemTrayIcon):
             None, "Message", "Are you sure to quit?", QMessageBox.Yes | QMessageBox.No
         )
         if reply == QMessageBox.Yes:
-            self._timer.stop()
+            if self._timer:
+                self._timer.stop()
             self._menu.deleteLater()
             self.hide()
             QApplication.instance().exit(0)
