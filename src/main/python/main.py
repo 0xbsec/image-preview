@@ -159,7 +159,7 @@ class TrayIcon(QSystemTrayIcon):
             return None
 
         stats = self.next_image["stats"]
-        self.statsLabel.setText(f'position: {stats["pos"]}/{stats["total"]} - image: {stats["name"]}')
+        self.statsLabel.setText(f'Image: <font face="tahoma" color="#45688E">{stats["name"]}</font> <span style="opacity:0.7">({stats["pos"]}/{stats["total"]})</span>')
         self.statsLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.statsLabel.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.statsLabel.setStyleSheet("QLabel {margin: 10px; margin-left: 20px;}")
@@ -191,7 +191,6 @@ class TrayIcon(QSystemTrayIcon):
 
     @pyqtSlot()
     def onOpen(self):
-        # self.onOpenAction.setChecked(self.onOpenAction.isChecked())
         self.updateConfig("config/switch_on_open", self.onOpenAction.isChecked())
 
     @pyqtSlot()
@@ -277,3 +276,4 @@ if __name__ == "__main__":
 
     exit_code = appctxt.run()
     sys.exit(exit_code)
+

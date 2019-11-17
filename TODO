@@ -11,3 +11,4 @@ fix image sizing
 add ability to control timer
 add metrics to show time left for this image (maybe as a line that get longed)...
 fix image show gap while loading
+add ability to manage directories (add/remove with order).
