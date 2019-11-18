@@ -2,7 +2,9 @@
 
 <img src="screenshots/app.png" width="128px" height="128px" />
 
-Menu bar app that shows images from a source folder of your choice.
+Menu bar app that shows random images from a source folder of your choice.
+
+More information in this blog post [this blog post](http://mhasbini.com/blog/introducing-image-preview-app.html).
 
 ## Screenshots
 
