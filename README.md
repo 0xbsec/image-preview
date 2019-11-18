@@ -1,6 +1,6 @@
 ## Image Preview
 
-<img src="screenshots/app.png" width="auto" height="128px" />
+<img src="screenshots/app.png" />
 
 Menu bar app that shows random images from a source folder of your choice.
 
