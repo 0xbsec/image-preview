@@ -1,6 +1,6 @@
 ## Image Preview
 
-![App](screenshots/app.png)
+<img src="screenshots/app.png" width="128px" height="128px" />
 
 Menu bar app that shows images from a source folder of your choice.
 
