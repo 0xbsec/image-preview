@@ -23,6 +23,8 @@ import darkdetect
 import sys
 from image_selector import ImageSelector
 from os.path import expanduser
+from watchdog.observers import Observer
+from handlers import DirectoryImagesHandler
 
 
 class AppContext(ApplicationContext):
@@ -68,11 +70,32 @@ class TrayIcon(QSystemTrayIcon):
                 self.directories = [source_directory]
             self.imageSelector = ImageSelector(self.directories)
 
+        self.observer = None
+        self.set_up_watchdog()
         self.next_image = None
         self.last_theme = darkdetect.theme().lower()
         self.updateIcon()
         self._timer = None
         self.create_menu()
+
+    def set_up_watchdog(self):
+        if self.observer:
+            # clean up incase we already have an observer
+            self.observer.join()
+            self.observer.stop()
+
+        if not self.directories:
+            return
+
+        if not len(self.directories) >= 1:
+            return
+
+        self.observer = Observer()
+        handler = DirectoryImagesHandler()
+        handler.set_image_selector(self.imageSelector)
+        self.observer.schedule(handler, path=self.directories[0], recursive=True)
+        self.observer.start()
+        # observer.join()
 
     def configBool(self, key):
         val = self.config.value(key)
@@ -104,14 +127,13 @@ class TrayIcon(QSystemTrayIcon):
         self.reloadImageSelector()
 
     def reloadImageSelector(self):
-        directories = []
-
         if self.configBool("config/show_stock"):
-            directories = [self.ctx.stock]
+            self.directories = [self.ctx.stock]
         elif self.config.value("config/source_directory"):
-            directories = [self.config.value("config/source_directory")]
+            self.directories = [self.config.value("config/source_directory")]
 
-        self.imageSelector = ImageSelector(directories)
+        self.imageSelector = ImageSelector(self.directories)
+        self.set_up_watchdog()
 
     def create_menu(self):
         _menu = QMenu()

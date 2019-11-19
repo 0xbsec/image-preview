@@ -4,3 +4,4 @@ add ability to control timer
 add metrics to show time left for this image (maybe as a line that get longed)...
 fix image show gap while loading
 add ability to open image in full size
+persist configs when update the application
